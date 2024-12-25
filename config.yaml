@@ -1,0 +1,31 @@
+# Generator Configuration for colivara-ts
+packageName: colivara_ts
+projectName: colivara-ts
+packageUrl: "https://github.com/tjmlabs/colivara-ts"
+packageTitle: 'Colivara TypeScript SDK'
+infoName: "Abdulhaleem"
+infoEmail: "abdulhaleem@tjmlabs.com"
+licenceName: "Apache-2.0"
+typescript:
+  packageName: colivara_ts
+  projectName: colivara-ts
+  npmName: "@tjmlabs/colivara-ts"
+  npmVersion: "1.0.0"
+  npmRepository: "https://registry.npmjs.org/"
+gitHost: github.com
+gitUserId: HalemoGPA
+gitRepoId: colivara-ts
+authMethods:
+  - api_key
+
+additionalProperties:
+  apiKeyAuthName: "api-key"
+  authMethods: "api-key"
+  useApiKeyAuth: true
+  useBearerAuth: false
+  useBasicAuth: false
+  useOAuth2Auth: false
+  disableAuthProcessor: true
+  disableAuthManager: true
+  excludeAuthMethods: "basic,bearer,oauth2"
+  securityFeatures: "apiKey"

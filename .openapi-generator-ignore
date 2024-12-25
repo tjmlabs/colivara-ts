@@ -1,0 +1,12 @@
+npm_modules
+config.yaml
+client.ts 
+package.json
+tsconfig
+package-lock.json 
+git_push.sh 
+draft.ts
+LICENSE
+.npmignore
+.gitignore
+test_image.png
