@@ -10,3 +10,5 @@ LICENSE
 .npmignore
 .gitignore
 test_image.png
+__tests__/
+coverage/

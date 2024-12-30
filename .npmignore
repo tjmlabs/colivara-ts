@@ -1,3 +1,9 @@
 # empty npmignore to ensure all required files (e.g., in the dist folder) are published by npm
 draft.ts 
 test_image.png
+coverage/
+__tests__/
+.openapi-generator-ignore
+.openapi-generator/
+config.yaml
+*.test.ts 

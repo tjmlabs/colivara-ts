@@ -1,4 +1,5 @@
 // client.ts
+process.emitWarning = () => {};
 import { Configuration } from "./configuration";
 import {
   CollectionsApi,
@@ -31,10 +32,10 @@ import {
   OnEnum,
 } from "./api";
 import axios, { AxiosError, AxiosResponse } from "axios";
+import { Webhook } from "svix";
 import * as fs from "fs";
 import * as path from "path";
 import * as mime from "mime-types";
-import { Webhook } from "svix";
 class ColiVaraError extends Error {
   constructor(message: string) {
     super(message);
@@ -367,7 +368,8 @@ export class ColiVara {
         try {
           const fileContent = await fs.promises.readFile(document_path);
           base64Content = fileContent.toString("base64");
-        } catch (error: unknown) {
+        } catch (error) {
+          // Remove the generic error catch and handle specific cases
           if (error instanceof Error) {
             const nodeError = error as NodeJS.ErrnoException;
             if (nodeError.code === "ENOENT") {
@@ -379,9 +381,9 @@ export class ColiVara {
                 `No read permission for file: ${document_path}`
               );
             }
-            throw new ColiVaraError(`Error reading file: ${error.message}`);
+            throw new ColiVaraError(`Error reading file: ${nodeError.message}`);
           }
-          throw new ColiVaraError("Unknown error occurred while reading file");
+          throw error; // Re-throw any other type of error
         }
       }
 
@@ -404,6 +406,9 @@ export class ColiVara {
       const response = await this.documentsApi.apiViewsUpsertDocument(document);
       return response.data;
     } catch (error) {
+      if (error instanceof ColiVaraError) {
+        throw error;
+      }
       this.handleError(error);
     }
   }
@@ -493,6 +498,7 @@ export class ColiVara {
       this.handleError(error);
     }
   }
+
   /**
    * Converts a file to a base64 encoded string.
    *
@@ -773,47 +779,47 @@ export class ColiVara {
     }
   }
 
-  //   /**
-  //    * Validates a webhook request.
-  //    *
-  //    * This endpoint allows the user to validate a webhook request given the webhook secret,
-  //    * payload, and headers.
-  //    *
-  //    * @param params - The parameters for validating a webhook
-  //    * @param params.webhook_secret - The webhook secret to validate the request
-  //    * @param params.payload - The payload of the webhook request
-  //    * @param params.headers - The headers of the webhook request
-  //    *
-  //    * @returns True if the request is valid, False otherwise
-  //    *
-  //    * @example
-  //    * const isValid = client.validateWebhook({
-  //    *     webhook_secret: "whsec_xxx",
-  //    *     payload: JSON.stringify(requestBody),
-  //    *     headers: {
-  //    *         'svix-id': 'msg_xxx',
-  //    *         'svix-timestamp': '1234567890',
-  //    *         'svix-signature': 'v1,xxx'
-  //    *     }
-  //    * });
-  //    */
-  //   validateWebhook({
-  //     webhook_secret,
-  //     payload,
-  //     headers,
-  //   }: {
-  //     webhook_secret: string;
-  //     payload: string;
-  //     headers: Record<string, any>;
-  //   }): boolean {
-  //     try {
-  //       const wh = new Webhook(webhook_secret);
-  //       wh.verify(payload, headers);
-  //       return true;
-  //     } catch (error) {
-  //       return false;
-  //     }
-  //   }
+  /**
+   * Validates a webhook request.
+   *
+   * This endpoint allows the user to validate a webhook request given the webhook secret,
+   * payload, and headers.
+   *
+   * @param params - The parameters for validating a webhook
+   * @param params.webhook_secret - The webhook secret to validate the request
+   * @param params.payload - The payload of the webhook request
+   * @param params.headers - The headers of the webhook request
+   *
+   * @returns True if the request is valid, False otherwise
+   *
+   * @example
+   * const isValid = client.validateWebhook({
+   *     webhook_secret: "whsec_xxx",
+   *     payload: JSON.stringify(requestBody),
+   *     headers: {
+   *         'svix-id': 'msg_xxx',
+   *         'svix-timestamp': '1234567890',
+   *         'svix-signature': 'v1,xxx'
+   *     }
+   * });
+   */
+  validateWebhook({
+    webhook_secret,
+    payload,
+    headers,
+  }: {
+    webhook_secret: string;
+    payload: string;
+    headers: Record<string, any>;
+  }): boolean {
+    try {
+      const wh = new Webhook(webhook_secret);
+      wh.verify(payload, headers);
+      return true;
+    } catch (error) {
+      return false;
+    }
+  }
 
   /**
    * Check the health of the API.

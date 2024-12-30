@@ -5,3 +5,4 @@ dist
 .Ds_Store
 test_image.png
 draft.ts
+coverage/
