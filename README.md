@@ -1,6 +1,3 @@
-Here's a comprehensive README.md for your SDK, along with the necessary changes to make the package importable as requested:
-
-```markdown
 # ColiVara TypeScript SDK
 
 Official TypeScript SDK for ColiVara API - A powerful document processing and search platform.
