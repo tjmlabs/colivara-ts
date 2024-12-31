@@ -1,5 +1,5 @@
 {
-  "name": "@tjmlabs/colivara-ts",
+  "name": "colivara-ts",
   "version": "1.0.0",
   "description": "Colivara TypeScript SDK for API integration",
   "main": "dist/index.js",

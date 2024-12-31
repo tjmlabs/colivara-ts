@@ -7,3 +7,9 @@ __tests__/
 .openapi-generator/
 config.yaml
 *.test.ts 
+src/
+node_modules
+.gitignore
+tsconfig.json
+jest.config.js
+*.tgz

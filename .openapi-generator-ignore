@@ -2,7 +2,7 @@ npm_modules
 config.yaml
 client.ts 
 package.json
-tsconfig
+tsconfig.json
 package-lock.json 
 git_push.sh 
 draft.ts
@@ -12,3 +12,4 @@ LICENSE
 test_image.png
 __tests__/
 coverage/
+index.ts
