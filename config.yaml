@@ -3,8 +3,8 @@ packageName: colivara_ts
 projectName: colivara-ts
 packageUrl: "https://github.com/tjmlabs/colivara-ts"
 packageTitle: 'Colivara TypeScript SDK'
-infoName: "Abdulhaleem"
-infoEmail: "abdulhaleem@tjmlabs.com"
+infoName: "TJM Labs"
+infoEmail: "founders@colivara.com"
 licenceName: "Apache-2.0"
 typescript:
   packageName: colivara_ts
@@ -13,7 +13,6 @@ typescript:
   npmVersion: "1.0.0"
   npmRepository: "https://registry.npmjs.org/"
 gitHost: github.com
-gitUserId: HalemoGPA
 gitRepoId: colivara-ts
 authMethods:
   - api_key

@@ -131,7 +131,7 @@ const imageEmbeddings = await client.createEmbedding({
 
 ```bash
 # Clone the repository
-git clone https://github.com/HalemoGPA/colivara-ts.git
+git clone https://github.com/tjmlabs/colivara-ts
 
 # Install dependencies
 npm install
