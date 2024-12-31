@@ -30,6 +30,9 @@ async function createCollection() {
         console.error('Error:', error);
     }
 }
+
+// run the function createCollection
+createCollection().catch(console.error);
 ```
 
 ## Basic Usage Examples
@@ -115,19 +118,6 @@ const imageEmbeddings = await client.createEmbedding({
 ### Health API
 - `checkHealth()`
 
-## Error Handling
-
-The SDK uses a custom `ColiVaraError` class for error handling:
-
-```typescript
-try {
-    await client.createCollection({ name: 'test' });
-} catch (error) {
-    if (error instanceof ColiVaraError) {
-        console.error('API Error:', error.message);
-    }
-}
-```
 
 ## Contributing
 
@@ -146,6 +136,9 @@ git clone https://github.com/HalemoGPA/colivara-ts.git
 # Install dependencies
 npm install
 
+# regenerate the sdk client
+openapi-generator generate -i https://api.colivara.com/v1/openapi.json -g typescript-axios -o . --config config.yaml 
+
 # Run tests
 npm test
 
@@ -156,7 +149,7 @@ npm run build
 ### Testing
 - Write tests for new features in the `__tests__` directory
 - Ensure all tests pass before submitting PR
-- Maintain test coverage above 80%
+- Maintain test coverage above 99%
 
 ## License
 
