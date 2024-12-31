@@ -1,6 +1,6 @@
 {
   "name": "colivara-ts",
-  "version": "0.0.2",
+  "version": "1.0.0",
   "description": "Colivara TypeScript SDK for API integration",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
