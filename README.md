@@ -1,6 +1,10 @@
 # ColiVara TypeScript SDK
 
-Official TypeScript SDK for ColiVara API - A powerful document processing and search platform.
+Official TypeScript SDK for ColiVara API - A powerful document processing and search platform. Checkout Colivara at [https://colivara.com](https://colivara.com)
+
+[![npm version](https://badge.fury.io/js/colivara-ts.svg)](https://badge.fury.io/js/colivara-ts)
+[![License](https://img.shields.io/badge/license-Apache%202.0-blue.svg)](https://github.com/tjmlabs/colivara-py/blob/main/LICENSE)
+[![Tests](https://github.com/tjmlabs/colivara-py/actions/workflows/test.yml/badge.svg)](https://github.com/tjmlabs/colivara-py/actions/workflows/test.yml) 
 
 ## Installation
 
