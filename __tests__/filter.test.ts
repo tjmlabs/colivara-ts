@@ -197,6 +197,26 @@ describe("Filter API", () => {
         }),
       });
     });
+    it("should handle missing key error", async () => {
+      // Create an error that includes the word "key"
+      const error = new Error("Invalid key format") as any;
+      error.isAxiosError = true;
+      error.response = {
+        status: 400,
+        data: { detail: "Invalid key format" },
+      };
+      mockedAxios.request.mockRejectedValueOnce(error);
+
+      await expect(
+        client.filter({
+          query_filter: {
+            key: "", // Invalid empty key
+            lookup: "key_lookup",
+            value: "test",
+          },
+        })
+      ).rejects.toThrow("Missing required key: Invalid key format");
+    });
 
     it("should handle API errors", async () => {
       const error = new Error("API Error (500): Internal server error");

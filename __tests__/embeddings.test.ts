@@ -183,5 +183,113 @@ describe("Embeddings API", () => {
         task: "query",
       });
     });
+    it("should directly use TaskEnum when provided", async () => {
+      mockedAxios.request.mockResolvedValueOnce({
+        data: mockEmbeddingsResponse,
+      });
+
+      // Explicitly use TaskEnum.Query to hit the else branch
+      const result = await client.createEmbedding({
+        input_data: "test query",
+        task: TaskEnum.Query, // Directly passing TaskEnum.Query
+      });
+
+      expect(result).toEqual(mockEmbeddingsResponse);
+      const parsedData = JSON.parse(
+        (mockedAxios.request.mock.calls[0][0] as any).data
+      );
+      expect(parsedData.task).toBe("query");
+    });
+    it("should handle non-ColiVaraError errors", async () => {
+      // Create a regular Error (not a ColiVaraError)
+      const regularError = new Error("Regular error");
+
+      // Mock the API call to throw this regular error
+      mockedAxios.request.mockRejectedValueOnce(regularError);
+
+      await expect(
+        client.createEmbedding({
+          input_data: "test query",
+          task: TaskEnum.Query,
+        })
+      ).rejects.toThrow(); // or .rejects.toThrow("Regular error")
+    });
+    it("should process TaskEnum directly without string conversion", async () => {
+      mockedAxios.request.mockResolvedValueOnce({
+        data: mockEmbeddingsResponse,
+      });
+
+      const result = await client.createEmbedding({
+        input_data: "test",
+        task: TaskEnum.Image, // Passing TaskEnum directly, not as a string
+      });
+
+      expect(result).toEqual(mockEmbeddingsResponse);
+      const parsedData = JSON.parse(
+        (mockedAxios.request.mock.calls[0][0] as any).data
+      );
+      // Verify the task wasn't converted/processed
+      expect(parsedData.task).toBe("image");
+      expect(typeof parsedData.task).toBe("string");
+    });
+    it("should return original data when file check fails for image task", async () => {
+      mockedAxios.request.mockResolvedValueOnce({
+        data: mockEmbeddingsResponse,
+      });
+
+      // Mock stats.isFile() to return false
+      mockedFs.stat.mockResolvedValue({ isFile: () => false } as any);
+
+      const testData = "not-a-file-path";
+      const result = await client.createEmbedding({
+        input_data: testData,
+        task: TaskEnum.Image,
+      });
+
+      expect(result).toEqual(mockEmbeddingsResponse);
+      const parsedData = JSON.parse(
+        (mockedAxios.request.mock.calls[0][0] as any).data
+      );
+      // Verify the original data was returned unchanged
+      expect(parsedData.input_data).toEqual([testData]);
+    });
+    it("should process non-string task directly", async () => {
+      mockedAxios.request.mockResolvedValueOnce({
+        data: mockEmbeddingsResponse,
+      });
+
+      // Create an enum-like object
+      const mockTask = Object.create(null, {
+        Query: {
+          value: "query",
+          enumerable: true,
+        },
+        toJSON: {
+          value: function () {
+            return "query";
+          },
+        },
+        toString: {
+          value: function () {
+            return "query";
+          },
+        },
+      });
+
+      await client.createEmbedding({
+        input_data: "test",
+        task: mockTask as unknown as TaskEnum,
+      });
+
+      const requestData = JSON.parse(
+        (mockedAxios.request.mock.calls[0][0] as any).data
+      );
+
+      // Verify the full structure
+      expect(requestData).toEqual({
+        input_data: ["test"],
+        task: "query",
+      });
+    });
   });
 });

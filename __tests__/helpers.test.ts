@@ -160,5 +160,135 @@ describe("File Conversion Helpers", () => {
       expect(file.name).toBe("test.pdf");
       expect(mime.lookup(file.name)).toBe("application/pdf");
     });
+    it("should handle other file system errors", async () => {
+      const fileError = new Error("Read error") as NodeJS.ErrnoException;
+      fileError.code = "OTHER_ERROR"; // Some other error code
+      fileError.message = "Some other file system error";
+
+      (fs.promises.readFile as jest.Mock).mockRejectedValueOnce(fileError);
+
+      await expect(client.fileToBase64("/error.txt")).rejects.toThrow(
+        "Error reading file: Some other file system error"
+      );
+    });
+
+    it("should handle unknown errors", async () => {
+      // Creating a non-Error object
+      const unknownError = {
+        someProperty: "some value",
+      };
+
+      (fs.promises.readFile as jest.Mock).mockRejectedValueOnce(unknownError);
+
+      await expect(client.fileToBase64("/error.txt")).rejects.toThrow(
+        "Unknown error occurred while reading file"
+      );
+    });
+    it("should handle file not found error in fileToImgbase64", async () => {
+      const fileError = new Error(
+        "ENOENT: no such file or directory"
+      ) as NodeJS.ErrnoException;
+      fileError.code = "ENOENT";
+
+      (fs.promises.readFile as jest.Mock).mockRejectedValueOnce(fileError);
+
+      await expect(client.fileToImgbase64("/non-existent.pdf")).rejects.toThrow(
+        "The specified file does not exist: /non-existent.pdf"
+      );
+    });
+
+    it("should handle permission denied error in fileToImgbase64", async () => {
+      const fileError = new Error(
+        "EACCES: permission denied"
+      ) as NodeJS.ErrnoException;
+      fileError.code = "EACCES";
+
+      (fs.promises.readFile as jest.Mock).mockRejectedValueOnce(fileError);
+
+      await expect(client.fileToImgbase64("/protected.pdf")).rejects.toThrow(
+        "No read permission for file: /protected.pdf"
+      );
+    });
+
+    it("should handle other file system errors in fileToImgbase64", async () => {
+      const fileError = new Error("Read error") as NodeJS.ErrnoException;
+      fileError.code = "OTHER_ERROR";
+      fileError.message = "Some other file system error";
+
+      (fs.promises.readFile as jest.Mock).mockRejectedValueOnce(fileError);
+
+      await expect(client.fileToImgbase64("/error.pdf")).rejects.toThrow(
+        "Error reading file: Some other file system error"
+      );
+    });
+    it("should handle non-file system errors in fileToImgbase64", async () => {
+      const nonFileError = new Error("Non-file system error");
+      // Make it look like an Axios error
+      (nonFileError as any).isAxiosError = true;
+      (nonFileError as any).response = {
+        status: 400,
+        data: { detail: "Bad request" },
+      };
+
+      (fs.promises.readFile as jest.Mock).mockRejectedValueOnce(nonFileError);
+
+      await expect(client.fileToImgbase64("/error.pdf")).rejects.toThrow(
+        "Error reading file: Non-file system error"
+      );
+    });
+    it("should handle non-Error objects in fileToImgbase64", async () => {
+      // Mock successful file read
+      const testBuffer = Buffer.from("test content");
+      (fs.promises.readFile as jest.Mock).mockResolvedValueOnce(testBuffer);
+
+      // Mock handleError method to throw a specific error we can test for
+      const handleErrorSpy = jest
+        .spyOn(client as any, "handleError")
+        .mockImplementation((error) => {
+          throw new Error("Handled non-Error object");
+        });
+
+      // Mock the API call to reject with a non-Error object
+      (client as any).helperApi.apiViewsFileToImgbase64 = jest
+        .fn()
+        .mockRejectedValueOnce({
+          someProperty: "some value",
+        });
+
+      try {
+        await expect(client.fileToImgbase64("/test.pdf")).rejects.toThrow(
+          "Handled non-Error object"
+        );
+
+        // Verify handleError was called with our non-Error object
+        expect(handleErrorSpy).toHaveBeenCalledWith(
+          expect.objectContaining({
+            someProperty: "some value",
+          })
+        );
+      } finally {
+        handleErrorSpy.mockRestore();
+      }
+    });
+
+    it("should use fallback mime type when lookup returns null", async () => {
+      const testBuffer = Buffer.from("test content");
+      (fs.promises.readFile as jest.Mock).mockResolvedValueOnce(testBuffer);
+      (mime.lookup as jest.Mock).mockReturnValueOnce(null); // Mock mime.lookup to return null
+
+      mockedAxios.request.mockResolvedValueOnce({
+        data: mockFileOut,
+      });
+
+      await client.fileToImgbase64("test.unknown");
+
+      const requestCall = mockedAxios.request.mock.calls[0][0];
+      const formData = requestCall.data as FormData;
+      const file = formData.get("file") as File;
+
+      expect(file).toBeInstanceOf(File);
+      expect(file.name).toBe("test.unknown");
+      expect(file.type).toBe("application/octet-stream"); // Verify fallback mime type is used
+    });
   });
 });

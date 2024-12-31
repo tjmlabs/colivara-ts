@@ -252,6 +252,43 @@ describe("Documents API", () => {
 
       expect(result).toEqual(mockUpsertResponse);
     });
+    it("should handle generic file reading error", async () => {
+      // Create a generic error that's not ENOENT or EACCES
+      const fileError = new Error(
+        "Generic file reading error"
+      ) as NodeJS.ErrnoException;
+      fileError.code = "UNKNOWN"; // Using a code that's not ENOENT or EACCES
+
+      (mockedFs.promises.readFile as jest.Mock).mockRejectedValueOnce(
+        fileError
+      );
+
+      await expect(
+        client.upsertDocument({
+          name: "test-document",
+          document_path: "/path/to/file.pdf",
+        })
+      ).rejects.toThrow("Error reading file: Generic file reading error");
+    });
+
+    it("should re-throw non-standard errors during file reading", async () => {
+      // Create a non-standard error object
+      const nonStandardError = {
+        foo: "bar",
+        toString: () => "Non-standard error object",
+      };
+
+      (mockedFs.promises.readFile as jest.Mock).mockRejectedValueOnce(
+        nonStandardError
+      );
+
+      await expect(
+        client.upsertDocument({
+          name: "test-document",
+          document_path: "/path/to/file.pdf",
+        })
+      ).rejects.toBe(nonStandardError); // Use toBe instead of toThrow since we're expecting the exact object
+    });
   });
 
   describe("deleteDocument", () => {

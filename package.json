@@ -12,7 +12,7 @@
   "scripts": {
     "build": "tsc",
     "prepare": "npm run build",
-    "test": "jest --coverage",
+    "test": "NODE_NO_WARNINGS=1 jest --coverage",
     "test:watch": "jest --watch",
     "test:specific": "jest -t",
     "clean": "rm -rf dist",
