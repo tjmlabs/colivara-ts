@@ -8,15 +8,15 @@ Official TypeScript SDK for ColiVara API - A powerful document processing and se
 ## Installation
 
 ```bash
-npm install @tjmlabs/colivara-ts
+npm install colivara-ts
 # or
-yarn add @tjmlabs/colivara-ts
+yarn add colivara-ts
 ```
 
 ## Quick Start
 
 ```typescript
-import { ColiVara } from '@tjmlabs/colivara-ts';
+import { ColiVara } from 'colivara-ts';
 
 // Initialize the client
 const client = new ColiVara('your-api-key');
