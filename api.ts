@@ -548,6 +548,50 @@ export interface Response {
 /**
  * 
  * @export
+ * @interface SearchImageIn
+ */
+export interface SearchImageIn {
+    /**
+     * 
+     * @type {string}
+     * @memberof SearchImageIn
+     */
+    'img_base64': string;
+    /**
+     * 
+     * @type {string}
+     * @memberof SearchImageIn
+     */
+    'collection_name'?: string | null;
+    /**
+     * 
+     * @type {number}
+     * @memberof SearchImageIn
+     */
+    'top_k'?: number | null;
+    /**
+     * 
+     * @type {QueryFilter}
+     * @memberof SearchImageIn
+     */
+    'query_filter'?: QueryFilter | null;
+}
+/**
+ * 
+ * @export
+ * @interface SearchImageOut
+ */
+export interface SearchImageOut {
+    /**
+     * 
+     * @type {Array<PageOutQuery>}
+     * @memberof SearchImageOut
+     */
+    'results': Array<PageOutQuery>;
+}
+/**
+ * 
+ * @export
  * @enum {string}
  */
 
@@ -2043,6 +2087,46 @@ export const SearchApiAxiosParamCreator = function (configuration?: Configuratio
                 options: localVarRequestOptions,
             };
         },
+        /**
+         * Search for pages similar to a given image.  This endpoint allows the user to search for pages similar to a given image. The search is performed across all documents in the specified collection.  Args:     request: The HTTP request object, which includes the user information.     payload (SearchImageIn): The input data for the search, which includes the image in base64 format and collection ID.  Returns:     SearchImageOut: The search results, a list of similar pages.  Raises:     HttpError: If the collection does not exist or the img_base64 is invalid.  Example:     POST /search-image/     {         \"img_base64\": \"base64_string\",         \"collection_name\": \"my_collection\",         \"top_k\": 3,         \"query_filter\": {             \"on\": \"document\",             \"key\": \"breed\",             \"value\": \"collie\",             \"lookup\": \"contains\"         }     }
+         * @summary Search Image
+         * @param {SearchImageIn} searchImageIn 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiViewsSearchImage: async (searchImageIn: SearchImageIn, options: RawAxiosRequestConfig = {}): Promise<RequestArgs> => {
+            // verify required parameter 'searchImageIn' is not null or undefined
+            assertParamExists('apiViewsSearchImage', 'searchImageIn', searchImageIn)
+            const localVarPath = `/v1/search-image/`;
+            // use dummy base URL string because the URL constructor only accepts absolute URLs.
+            const localVarUrlObj = new URL(localVarPath, DUMMY_BASE_URL);
+            let baseOptions;
+            if (configuration) {
+                baseOptions = configuration.baseOptions;
+            }
+
+            const localVarRequestOptions = { method: 'POST', ...baseOptions, ...options};
+            const localVarHeaderParameter = {} as any;
+            const localVarQueryParameter = {} as any;
+
+            // authentication Bearer required
+            // http bearer authentication required
+            await setBearerAuthToObject(localVarHeaderParameter, configuration)
+
+
+    
+            localVarHeaderParameter['Content-Type'] = 'application/json';
+
+            setSearchParams(localVarUrlObj, localVarQueryParameter);
+            let headersFromBaseOptions = baseOptions && baseOptions.headers ? baseOptions.headers : {};
+            localVarRequestOptions.headers = {...localVarHeaderParameter, ...headersFromBaseOptions, ...options.headers};
+            localVarRequestOptions.data = serializeDataIfNeeded(searchImageIn, localVarRequestOptions, configuration)
+
+            return {
+                url: toPathString(localVarUrlObj),
+                options: localVarRequestOptions,
+            };
+        },
     }
 };
 
@@ -2066,6 +2150,19 @@ export const SearchApiFp = function(configuration?: Configuration) {
             const localVarOperationServerBasePath = operationServerMap['SearchApi.apiViewsSearch']?.[localVarOperationServerIndex]?.url;
             return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
         },
+        /**
+         * Search for pages similar to a given image.  This endpoint allows the user to search for pages similar to a given image. The search is performed across all documents in the specified collection.  Args:     request: The HTTP request object, which includes the user information.     payload (SearchImageIn): The input data for the search, which includes the image in base64 format and collection ID.  Returns:     SearchImageOut: The search results, a list of similar pages.  Raises:     HttpError: If the collection does not exist or the img_base64 is invalid.  Example:     POST /search-image/     {         \"img_base64\": \"base64_string\",         \"collection_name\": \"my_collection\",         \"top_k\": 3,         \"query_filter\": {             \"on\": \"document\",             \"key\": \"breed\",             \"value\": \"collie\",             \"lookup\": \"contains\"         }     }
+         * @summary Search Image
+         * @param {SearchImageIn} searchImageIn 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        async apiViewsSearchImage(searchImageIn: SearchImageIn, options?: RawAxiosRequestConfig): Promise<(axios?: AxiosInstance, basePath?: string) => AxiosPromise<SearchImageOut>> {
+            const localVarAxiosArgs = await localVarAxiosParamCreator.apiViewsSearchImage(searchImageIn, options);
+            const localVarOperationServerIndex = configuration?.serverIndex ?? 0;
+            const localVarOperationServerBasePath = operationServerMap['SearchApi.apiViewsSearchImage']?.[localVarOperationServerIndex]?.url;
+            return (axios, basePath) => createRequestFunction(localVarAxiosArgs, globalAxios, BASE_PATH, configuration)(axios, localVarOperationServerBasePath || basePath);
+        },
     }
 };
 
@@ -2085,6 +2182,16 @@ export const SearchApiFactory = function (configuration?: Configuration, basePat
          */
         apiViewsSearch(queryIn: QueryIn, options?: RawAxiosRequestConfig): AxiosPromise<QueryOut> {
             return localVarFp.apiViewsSearch(queryIn, options).then((request) => request(axios, basePath));
+        },
+        /**
+         * Search for pages similar to a given image.  This endpoint allows the user to search for pages similar to a given image. The search is performed across all documents in the specified collection.  Args:     request: The HTTP request object, which includes the user information.     payload (SearchImageIn): The input data for the search, which includes the image in base64 format and collection ID.  Returns:     SearchImageOut: The search results, a list of similar pages.  Raises:     HttpError: If the collection does not exist or the img_base64 is invalid.  Example:     POST /search-image/     {         \"img_base64\": \"base64_string\",         \"collection_name\": \"my_collection\",         \"top_k\": 3,         \"query_filter\": {             \"on\": \"document\",             \"key\": \"breed\",             \"value\": \"collie\",             \"lookup\": \"contains\"         }     }
+         * @summary Search Image
+         * @param {SearchImageIn} searchImageIn 
+         * @param {*} [options] Override http request option.
+         * @throws {RequiredError}
+         */
+        apiViewsSearchImage(searchImageIn: SearchImageIn, options?: RawAxiosRequestConfig): AxiosPromise<SearchImageOut> {
+            return localVarFp.apiViewsSearchImage(searchImageIn, options).then((request) => request(axios, basePath));
         },
     };
 };
@@ -2106,6 +2213,18 @@ export class SearchApi extends BaseAPI {
      */
     public apiViewsSearch(queryIn: QueryIn, options?: RawAxiosRequestConfig) {
         return SearchApiFp(this.configuration).apiViewsSearch(queryIn, options).then((request) => request(this.axios, this.basePath));
+    }
+
+    /**
+     * Search for pages similar to a given image.  This endpoint allows the user to search for pages similar to a given image. The search is performed across all documents in the specified collection.  Args:     request: The HTTP request object, which includes the user information.     payload (SearchImageIn): The input data for the search, which includes the image in base64 format and collection ID.  Returns:     SearchImageOut: The search results, a list of similar pages.  Raises:     HttpError: If the collection does not exist or the img_base64 is invalid.  Example:     POST /search-image/     {         \"img_base64\": \"base64_string\",         \"collection_name\": \"my_collection\",         \"top_k\": 3,         \"query_filter\": {             \"on\": \"document\",             \"key\": \"breed\",             \"value\": \"collie\",             \"lookup\": \"contains\"         }     }
+     * @summary Search Image
+     * @param {SearchImageIn} searchImageIn 
+     * @param {*} [options] Override http request option.
+     * @throws {RequiredError}
+     * @memberof SearchApi
+     */
+    public apiViewsSearchImage(searchImageIn: SearchImageIn, options?: RawAxiosRequestConfig) {
+        return SearchApiFp(this.configuration).apiViewsSearchImage(searchImageIn, options).then((request) => request(this.axios, this.basePath));
     }
 }
 
