@@ -75,6 +75,13 @@ const searchResults = await client.search({
     collection_name: 'research',
     top_k: 5
 });
+
+// Search using an image file
+const imageSearchResults = await client.searchImage({
+    collection_name: 'my-collection',
+    image_path: './path/to/image.jpg',
+    top_k: 5
+});
 ```
 
 ### Creating Embeddings
@@ -111,6 +118,7 @@ const imageEmbeddings = await client.createEmbedding({
 
 ### Search API
 - `search({ query, collection_name?, top_k?, query_filter? })`
+- `searchImage({ collection_name, image_path?, image_base64?, top_k?, query_filter? })`
 
 ### Embeddings API
 - `createEmbedding({ input_data, task? })`
