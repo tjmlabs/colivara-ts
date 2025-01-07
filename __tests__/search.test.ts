@@ -1,11 +1,16 @@
 // __tests__/search.test.ts
 import { ColiVara } from "../client";
 import axios from "axios";
-import { QueryOut, PageOutQuery } from "../api";
-
+import { QueryOut, PageOutQuery, SearchImageOut } from "../api";
+import * as fs from "fs";
 jest.mock("axios");
+jest.mock("fs", () => ({
+  promises: {
+    readFile: jest.fn(),
+  },
+}));
 const mockedAxios = axios as jest.Mocked<typeof axios>;
-
+const mockedFs = fs.promises as jest.Mocked<typeof fs.promises>;
 describe("Search API", () => {
   let client: ColiVara;
   const API_KEY = "test-api-key";
@@ -256,6 +261,246 @@ describe("Search API", () => {
           query: "test query",
         })
       ).rejects.toThrow("Network Error");
+    });
+  });
+});
+
+describe("Search Image API", () => {
+  let client: ColiVara;
+  const API_KEY = "test-api-key";
+
+  beforeEach(() => {
+    client = new ColiVara(API_KEY);
+    jest.clearAllMocks();
+  });
+
+  const mockPageOutQuery: PageOutQuery = {
+    collection_name: "test-collection",
+    collection_id: 1,
+    collection_metadata: { category: "test" },
+    document_name: "test-document",
+    document_id: 1,
+    document_metadata: { type: "image" },
+    page_number: 1,
+    raw_score: 0.95,
+    normalized_score: 0.85,
+    img_base64: "base64_encoded_image_data",
+  };
+
+  const mockSearchImageResponse: SearchImageOut = {
+    results: [mockPageOutQuery],
+  };
+
+  describe("searchImage", () => {
+    it("should perform image search with base64 string", async () => {
+      mockedAxios.request.mockResolvedValueOnce({
+        data: mockSearchImageResponse,
+      });
+
+      const result = await client.searchImage({
+        collection_name: "test-collection",
+        image_base64: "base64_encoded_test_image",
+      });
+
+      expect(result).toEqual(mockSearchImageResponse);
+      expect(result.results[0]).toHaveProperty("collection_id");
+      expect(result.results[0]).toHaveProperty("document_id");
+      expect(mockedAxios.request).toHaveBeenCalledWith({
+        method: "POST",
+        url: "https://api.colivara.com/v1/search-image/",
+        headers: {
+          Authorization: "Bearer test-api-key",
+          "Content-Type": "application/json",
+        },
+        data: JSON.stringify({
+          img_base64: "base64_encoded_test_image",
+          collection_name: "test-collection",
+          top_k: 3,
+          query_filter: undefined,
+        }),
+      });
+    });
+
+    it("should perform image search with file path", async () => {
+      const testImageContent = Buffer.from("test image content");
+      mockedFs.readFile.mockResolvedValueOnce(testImageContent);
+      mockedAxios.request.mockResolvedValueOnce({
+        data: mockSearchImageResponse,
+      });
+
+      const result = await client.searchImage({
+        collection_name: "test-collection",
+        image_path: "test.jpg",
+      });
+
+      expect(result).toEqual(mockSearchImageResponse);
+      expect(mockedFs.readFile).toHaveBeenCalledWith("test.jpg");
+      expect(mockedAxios.request).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.stringContaining(testImageContent.toString("base64")),
+        })
+      );
+    });
+
+    it("should search with custom top_k parameter", async () => {
+      const customResponse: SearchImageOut = {
+        results: Array(5).fill(mockPageOutQuery),
+      };
+
+      mockedAxios.request.mockResolvedValueOnce({ data: customResponse });
+
+      const result = await client.searchImage({
+        collection_name: "test-collection",
+        image_base64: "base64_encoded_test_image",
+        top_k: 5,
+      });
+
+      expect(result.results).toHaveLength(5);
+      const mockCall = (mockedAxios.request as jest.Mock).mock.calls[0][0];
+      const calledData = JSON.parse(mockCall.data);
+      expect(calledData.top_k).toBe(5);
+    });
+
+    it("should search with document metadata filter", async () => {
+      const filteredResponse: SearchImageOut = {
+        results: [
+          {
+            ...mockPageOutQuery,
+            document_metadata: { type: "jpeg" },
+          },
+        ],
+      };
+
+      mockedAxios.request.mockResolvedValueOnce({ data: filteredResponse });
+
+      const result = await client.searchImage({
+        collection_name: "test-collection",
+        image_base64: "base64_encoded_test_image",
+        query_filter: {
+          on: "document",
+          key: "type",
+          value: "jpeg",
+          lookup: "key_lookup",
+        },
+      });
+
+      expect(result.results[0].document_metadata).toEqual({ type: "jpeg" });
+      const mockCall = (mockedAxios.request as jest.Mock).mock.calls[0][0];
+      const calledData = JSON.parse(mockCall.data);
+      expect(calledData.query_filter).toEqual({
+        on: "document",
+        key: "type",
+        value: "jpeg",
+        lookup: "key_lookup",
+      });
+    });
+
+    it("should handle file not found error", async () => {
+      const error = new Error("ENOENT: no such file or directory");
+      (error as NodeJS.ErrnoException).code = "ENOENT";
+      mockedFs.readFile.mockRejectedValueOnce(error);
+
+      await expect(
+        client.searchImage({
+          collection_name: "test-collection",
+          image_path: "nonexistent.jpg",
+        })
+      ).rejects.toThrow("The specified file does not exist: nonexistent.jpg");
+    });
+
+    it("should handle file permission error", async () => {
+      const error = new Error("EACCES: permission denied");
+      (error as NodeJS.ErrnoException).code = "EACCES";
+      mockedFs.readFile.mockRejectedValueOnce(error);
+
+      await expect(
+        client.searchImage({
+          collection_name: "test-collection",
+          image_path: "protected.jpg",
+        })
+      ).rejects.toThrow("No read permission for file: protected.jpg");
+    });
+
+    it("should handle missing input error", async () => {
+      await expect(
+        client.searchImage({
+          collection_name: "test-collection",
+        })
+      ).rejects.toThrow("Either image_path or image_base64 must be provided.");
+    });
+
+    it("should handle API errors", async () => {
+      const error = new Error("API Error");
+      (error as any).isAxiosError = true;
+      (error as any).response = {
+        status: 400,
+        data: { detail: "Invalid image format" },
+      };
+      mockedAxios.request.mockRejectedValueOnce(error);
+
+      await expect(
+        client.searchImage({
+          collection_name: "test-collection",
+          image_base64: "invalid_base64",
+        })
+      ).rejects.toThrow("API Error");
+    });
+
+    it("should verify score properties in results", async () => {
+      mockedAxios.request.mockResolvedValueOnce({
+        data: mockSearchImageResponse,
+      });
+
+      const result = await client.searchImage({
+        collection_name: "test-collection",
+        image_base64: "base64_encoded_test_image",
+      });
+
+      expect(result.results[0]).toHaveProperty("raw_score");
+      expect(result.results[0]).toHaveProperty("normalized_score");
+      expect(typeof result.results[0].raw_score).toBe("number");
+      expect(typeof result.results[0].normalized_score).toBe("number");
+    });
+
+    it("should handle empty search results", async () => {
+      const emptyResponse: SearchImageOut = {
+        results: [],
+      };
+
+      mockedAxios.request.mockResolvedValueOnce({ data: emptyResponse });
+
+      const result = await client.searchImage({
+        collection_name: "test-collection",
+        image_base64: "base64_encoded_test_image",
+      });
+
+      expect(result.results).toHaveLength(0);
+      expect(result).toEqual(emptyResponse);
+    });
+    it("should handle generic file read errors", async () => {
+      // Create a generic error without a specific error code
+      const genericError = new Error("Some unexpected error");
+      mockedFs.readFile.mockRejectedValueOnce(genericError);
+
+      await expect(
+        client.searchImage({
+          collection_name: "test-collection",
+          image_path: "problematic.jpg",
+        })
+      ).rejects.toThrow("Error reading file: Some unexpected error");
+    });
+
+    it("should handle non-NodeJS errors", async () => {
+      // Create a non-Error object
+      const nonError = { message: "Not an error instance" };
+      mockedFs.readFile.mockRejectedValueOnce(nonError);
+
+      await expect(
+        client.searchImage({
+          collection_name: "test-collection",
+          image_path: "problematic.jpg",
+        })
+      ).rejects.toEqual(nonError); // Should throw the original non-Error object
     });
   });
 });

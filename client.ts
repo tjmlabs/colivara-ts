@@ -30,6 +30,8 @@ import {
   Key,
   Value,
   OnEnum,
+  SearchImageOut,
+  SearchImageIn,
 } from "./api";
 import axios, { AxiosError, AxiosResponse } from "axios";
 import { Webhook } from "svix";
@@ -662,7 +664,139 @@ export class ColiVara {
       this.handleError(error);
     }
   }
+  /**
+   * Search for pages similar to a given image.
+   *
+   * This method allows you to search for pages similar to a given image across all documents
+   * in the specified collection. You can provide either a path to an image file or a base64-encoded
+   * string of the image content.
+   *
+   * @param params - The parameters for image searching
+   * @param params.collection_name - The name of the collection to search in
+   * @param params.image_path - Path to the image file to search with (optional if image_base64 is provided)
+   * @param params.image_base64 - Base64-encoded string of the image content (optional if image_path is provided)
+   * @param params.top_k - The number of top results to return. Defaults to 3
+   * @param params.query_filter - An optional filter to apply to the search results.
+   *                             The filter can be used to narrow down the search based on specific criteria.
+   *                             It should contain the following possible keys:
+   *                             - "on": "document" or "collection"
+   *                             - "key": string or string[]
+   *                             - "value": string | number | boolean | null
+   *                             - "lookup": "key_lookup" | "contains" | "contained_by" | "has_key" | "has_keys" | "has_any_keys"
+   *
+   * @returns The search results, including a list of similar pages
+   * @throws {ColiVaraError} If neither image_path nor image_base64 is provided, or if there's an error with file handling
+   * @throws {ColiVaraError} If the API request fails
+   *
+   * @example
+   * // Search with image file
+   * const results = await client.searchImage({
+   *     collection_name: "my_collection",
+   *     image_path: "path/to/image.jpg"
+   * });
+   *
+   * // Search with base64-encoded image
+   * const results = await client.searchImage({
+   *     collection_name: "my_collection",
+   *     image_base64: "base64_encoded_string"
+   * });
+   *
+   * // Search with filter
+   * const results = await client.searchImage({
+   *     collection_name: "my_collection",
+   *     image_path: "path/to/image.jpg",
+   *     query_filter: {
+   *         on: "document",
+   *         key: "category",
+   *         value: "landscape",
+   *         lookup: "contains"
+   *     }
+   * });
+   */
+  async searchImage({
+    collection_name,
+    image_path,
+    image_base64,
+    top_k = 3,
+    query_filter,
+  }: {
+    collection_name: string;
+    image_path?: string;
+    image_base64?: string;
+    top_k?: number;
+    query_filter?: {
+      on?: "document" | "collection";
+      key: string | string[];
+      value?: string | number | boolean | null;
+      lookup:
+        | "key_lookup"
+        | "contains"
+        | "contained_by"
+        | "has_key"
+        | "has_keys"
+        | "has_any_keys";
+    };
+  }): Promise<SearchImageOut> {
+    try {
+      let img_base64 = image_base64;
 
+      if (image_path) {
+        try {
+          const fileContent = await fs.promises.readFile(image_path);
+          img_base64 = fileContent.toString("base64");
+        } catch (error) {
+          if (error instanceof Error) {
+            const nodeError = error as NodeJS.ErrnoException;
+            if (nodeError.code === "ENOENT") {
+              throw new ColiVaraError(
+                `The specified file does not exist: ${image_path}`
+              );
+            } else if (nodeError.code === "EACCES") {
+              throw new ColiVaraError(
+                `No read permission for file: ${image_path}`
+              );
+            }
+            throw new ColiVaraError(`Error reading file: ${nodeError.message}`);
+          }
+          throw error;
+        }
+      }
+
+      if (!img_base64) {
+        throw new ColiVaraError(
+          "Either image_path or image_base64 must be provided."
+        );
+      }
+
+      let processedQueryFilter: QueryFilter | undefined;
+
+      if (query_filter) {
+        processedQueryFilter = {
+          key: query_filter.key,
+          value: query_filter.value ?? "", // Use empty string as default if value is undefined
+          lookup: query_filter.lookup,
+          on: query_filter.on,
+        };
+      }
+
+      const searchImageBody: SearchImageIn = {
+        img_base64,
+        collection_name,
+        top_k,
+        query_filter: processedQueryFilter,
+      };
+
+      const response = await this.searchApi.apiViewsSearchImage(
+        searchImageBody
+      );
+      return response.data;
+    } catch (error) {
+      if (error instanceof ColiVaraError) {
+        throw error;
+      }
+      this.handleError(error);
+    }
+  }
   /**
    * Creates embeddings for the given input data.
    *
